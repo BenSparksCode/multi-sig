@@ -1,10 +1,13 @@
+//SPDX-License-Identifier: MIT
 pragma solidity 0.8.4;
 
 contract MultiSigWallet {
-
     address[] public owners;
-    mapping(address => bool) public isOwner;
     uint256 public numConfirmationsRequired;
+
+    mapping(address => bool) public isOwner;
+    // tx id => confirmer address => confirmed status
+    mapping(uint256 => mapping(address => bool)) public isConfirmed;
 
     struct Transaction {
         address to;
@@ -16,9 +19,5 @@ contract MultiSigWallet {
 
     Transaction[] transactions;
 
-
-    constructor() {
-        
-    }
-    
+    constructor() {}
 }
