@@ -1,9 +1,17 @@
 {
   "name": "hardhat-project",
-  "devDependencies": {
-    "hardhat": "^2.2.1"
+  "scripts": {
+    "chain": "hardhat node",
+    "test": "hardhat test",
+    "compile": "hardhat compile",
+    "deploy": "hardhat run scripts/deploy.ts",
+    "accounts": "hardhat accounts",
+    "balance": "hardhat balance",
+    "generate": "hardhat generate",
+    "account": "hardhat account"
   },
   "dependencies": {
+    "hardhat": "^2.2.1",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "chai": "^4.3.4",
