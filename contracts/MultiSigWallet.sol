@@ -37,7 +37,7 @@ contract MultiSigWallet {
     }
 
     modifier txExists(uint256 _txIndex) {
-        require(_txIndex<transactions.length, "tx doesn't exist");
+        require(_txIndex < transactions.length, "tx doesn't exist");
         _;
     }
 
@@ -47,9 +47,38 @@ contract MultiSigWallet {
     }
 
     modifier notConfirmed(uint256 _txIndex) {
-        require(!isConfirmed[_txIndex][msg.sender], "sender already confirmed this tx");
+        require(
+            !isConfirmed[_txIndex][msg.sender],
+            "sender already confirmed this tx"
+        );
         _;
     }
 
     constructor() {}
+
+    receive() external payable {}
+
+    function submitTransaction() public {}
+
+    function confirmTransaction() public {}
+
+    function executeTransaction() public {}
+
+    function revokeConfirmation() public {}
+
+    function getOwners() public view returns (uint256) {}
+
+    function getTransactionCount() public view returns (uint256) {}
+
+    function getTransaction()
+        public
+        view
+        returns (
+            address to,
+            uint256 value,
+            bytes memory data,
+            bool executed,
+            uint256 numConfirmations
+        )
+    {}
 }
