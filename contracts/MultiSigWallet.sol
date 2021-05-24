@@ -54,7 +54,24 @@ contract MultiSigWallet {
         _;
     }
 
-    constructor() {}
+    constructor(address[] memory _owners, uint256 _numConfirmations) {
+        require(_owners.length > 0, "Need at least 1 owner");
+        require(
+            _numConfirmations > 0 && _numConfirmations < _owners.length,
+            "Need fewer confs than owners"
+        );
+
+        for(uint i = 0; i < _owners.length; i++){
+            address owner = _owners[i];
+            require(owner != address(0), "Owner can't be 0 address");
+            require(!isOwner[owner], "Owner not unique");
+
+            isOwner[owner] = true;
+            owners.push(owner);
+        }
+
+        numConfirmationsRequired = _numConfirmations;
+    }
 
     receive() external payable {}
 
