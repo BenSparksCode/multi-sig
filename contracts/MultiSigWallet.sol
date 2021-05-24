@@ -73,7 +73,9 @@ contract MultiSigWallet {
         numConfirmationsRequired = _numConfirmations;
     }
 
-    receive() external payable {}
+    receive() external payable {
+        emit Deposit(msg.sender, msg.value, address(this).balance);
+    }
 
     function submitTransaction() public {}
 
