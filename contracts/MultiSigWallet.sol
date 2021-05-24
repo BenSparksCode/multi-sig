@@ -61,7 +61,7 @@ contract MultiSigWallet {
             "Need fewer confs than owners"
         );
 
-        for(uint i = 0; i < _owners.length; i++){
+        for (uint256 i = 0; i < _owners.length; i++) {
             address owner = _owners[i];
             require(owner != address(0), "Owner can't be 0 address");
             require(!isOwner[owner], "Owner not unique");
@@ -77,7 +77,25 @@ contract MultiSigWallet {
         emit Deposit(msg.sender, msg.value, address(this).balance);
     }
 
-    function submitTransaction() public {}
+    function submitTransaction(
+        address _to,
+        uint256 _value,
+        bytes memory _data
+    ) public onlyOwner {
+        uint256 txIndex = transactions.length;
+
+        transactions.push(
+            Transaction({
+                to: _to,
+                value: _value,
+                data: _data,
+                numConfirmations: 0,
+                executed: false
+            })
+        );
+
+        emit SubmitTransaction(msg.sender, txIndex, _to, _value, _data);
+    }
 
     function confirmTransaction() public {}
 
