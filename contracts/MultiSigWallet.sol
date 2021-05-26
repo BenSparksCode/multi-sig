@@ -97,7 +97,13 @@ contract MultiSigWallet {
         emit SubmitTransaction(msg.sender, txIndex, _to, _value, _data);
     }
 
-    function confirmTransaction(uint256 _txIndex) onlyOwner txExists(_txIndex) notExecuted(_txIndex) notConfirmed(_txIndex) public {
+    function confirmTransaction(uint256 _txIndex)
+        public
+        onlyOwner
+        txExists(_txIndex)
+        notExecuted(_txIndex)
+        notConfirmed(_txIndex)
+    {
         Transaction storage transaction = transactions[_txIndex];
         transaction.numConfirmations += 1;
         isConfirmed[_txIndex][msg.sender] = true;
@@ -105,7 +111,21 @@ contract MultiSigWallet {
         emit ConfirmTransaction(msg.sender, _txIndex);
     }
 
-    function executeTransaction() public {}
+    function executeTransaction(uint256 _txIndex)
+        public
+        onlyOwner
+        txExists(_txIndex)
+        notExecuted(_txIndex)
+    {
+        Transaction storage transaction = transactions[_txIndex];
+        require(transaction.numConfirmations >= numConfirmationsRequired, "Not enough confirmations");
+        transaction.executed = true;
+
+        (bool success,) = transaction.to.call{value: transaction.value}(transaction.data);
+
+        require(success, "Tx execution failed");
+        emit ExecuteTransaction(msg.sender, _txIndex);
+    }
 
     function revokeConfirmation() public {}
 
