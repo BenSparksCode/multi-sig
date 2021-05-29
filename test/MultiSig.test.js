@@ -77,7 +77,7 @@ describe("Multi Sig Tests", function () {
         expect(txRes.executed).to.equal(false)
         expect(txRes.numConfirmations).to.equal(0)
     });
-    it("A non-signer CANNOT SUBMIT a tx", async () => {
+    it("A non-signer cannot SUBMIT a tx", async () => {
         await expect(
             MultiSigInstance.connect(wallet6).submitTransaction(wallet6.address, 2, ethers.utils.formatBytes32String("submit Tx"))
         ).to.be.revertedWith("not owner")
@@ -95,7 +95,7 @@ describe("Multi Sig Tests", function () {
         txRes = await MultiSigInstance.getTransaction(0)
         expect(txRes.numConfirmations).to.equal(BigNumber.from(2))
     });
-    it("A non-signer CANNOT CONFIRM a submitted tx", async () => {
+    it("A non-signer cannot CONFIRM a submitted tx", async () => {
         await MultiSigInstance.connect(wallet1).submitTransaction(wallet6.address, 0, ethers.utils.formatBytes32String("confirm Tx"))
         let txRes = await MultiSigInstance.getTransaction(0)
         expect(txRes.numConfirmations).to.equal(0)
@@ -117,19 +117,58 @@ describe("Multi Sig Tests", function () {
         txRes = await MultiSigInstance.getTransaction(0)
         expect(txRes.numConfirmations).to.equal(BigNumber.from(0))
     });
-    it("A non-signer CANNOT REVOKE a confirmation", async () => {
-        expect(false).to.equal(true)
+    it("A non-signer cannot REVOKE a confirmation", async () => {
+        await MultiSigInstance.connect(wallet1).submitTransaction(wallet6.address, 0, ethers.utils.formatBytes32String("confirm Tx"))
+        let txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.numConfirmations).to.equal(0)
+
+        await expect(
+            MultiSigInstance.connect(wallet6).revokeConfirmation(0)
+        ).to.be.revertedWith("not owner")
     });
     it("A signer can EXECUTE a confirmed tx", async () => {
+        await MultiSigInstance.connect(wallet1).submitTransaction(wallet6.address, 0, ethers.utils.formatBytes32String("execute Tx"))
+        let txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.numConfirmations).to.equal(0)
+        // wallets 1 - 3 confirm tx
+        await MultiSigInstance.connect(wallet1).confirmTransaction(0)
+        await MultiSigInstance.connect(wallet2).confirmTransaction(0)
+        await MultiSigInstance.connect(wallet3).confirmTransaction(0)
+        txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.numConfirmations).to.equal(BigNumber.from(3))
+        // wallet 4 executes tx
+        await MultiSigInstance.connect(wallet4).executeTransaction(0)
+        txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.to).to.equal(wallet6.address)
+        expect(txRes.value).to.equal(0)
+        expect(txRes.data).to.equal(ethers.utils.formatBytes32String("execute Tx"))
+        expect(txRes.executed).to.equal(true)
+        expect(txRes.numConfirmations).to.equal(3)
+    });
+    it("A signer cannot EXECUTE an unconfirmed tx", async () => {
+        await MultiSigInstance.connect(wallet1).submitTransaction(wallet6.address, 0, ethers.utils.formatBytes32String("execute Tx"))
+        let txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.numConfirmations).to.equal(0)
+        // wallets 1 and 2 confirm tx - not enough
+        await MultiSigInstance.connect(wallet1).confirmTransaction(0)
+        await MultiSigInstance.connect(wallet2).confirmTransaction(0)
+        txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.numConfirmations).to.equal(BigNumber.from(2))
+        // wallet 4 executes tx
+        await expect(
+            MultiSigInstance.connect(wallet4).executeTransaction(0)
+        ).to.be.revertedWith("Not enough confirmations")
+    });
+    it("A non-signer cannot EXECUTE a confirmed tx", async () => {
         expect(false).to.equal(true)
     });
-    it("A signer CANNOT EXECUTE an unconfirmed tx", async () => {
+    it("A signer cannot EXECUTE a confirmed, then unconfirmed tx", async () => {
         expect(false).to.equal(true)
     });
-    it("A non-signer CANNOT EXECUTE an confirmed tx", async () => {
+    it("An executed tx can send ETH to an address", async () => {
         expect(false).to.equal(true)
     });
-    it("A signer CANNOT EXECUTE a confirmed, then unconfirmed tx", async () => {
+    it("An executed tx can call a function on another contract", async () => {
         expect(false).to.equal(true)
     });
 });
