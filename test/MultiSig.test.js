@@ -38,10 +38,22 @@ describe("Multi Sig Tests", function () {
         expect(wallets.toString()).to.equal(signerAddresses.toString())
     });
     it("getTransactionCount() returns transaction count correctly", async () => {
-        expect(false).to.equal(true)
+        expect(await MultiSigInstance.getTransactionCount()).to.equal(0)
+        await MultiSigInstance.connect(wallet1).submitTransaction(wallet6.address, 0, ethers.utils.formatBytes32String("0x0"))
+        expect(await MultiSigInstance.getTransactionCount()).to.equal(1)
+        await MultiSigInstance.connect(wallet1).submitTransaction(wallet6.address, 0, ethers.utils.formatBytes32String("0x0"))
+        await MultiSigInstance.connect(wallet1).submitTransaction(wallet6.address, 0, ethers.utils.formatBytes32String("0x0"))
+        expect(await MultiSigInstance.getTransactionCount()).to.equal(3)
     });
     it("getTransaction() returns a transaction correctly", async () => {
-        expect(false).to.equal(true)
+        await MultiSigInstance.connect(wallet1).submitTransaction(wallet6.address, 12, ethers.utils.formatBytes32String("Oi bruv"))
+        let txRes = await MultiSigInstance.getTransaction(0)
+
+        expect(txRes.to).to.equal(wallet6.address)
+        expect(txRes.value).to.equal(12)
+        expect(txRes.data).to.equal(ethers.utils.formatBytes32String("Oi bruv"))
+        expect(txRes.executed).to.equal(false)
+        expect(txRes.numConfirmations).to.equal(0)
     });
     it("MultiSig can accept ETH", async () => {
         expect(false).to.equal(true)
