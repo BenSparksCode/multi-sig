@@ -160,13 +160,69 @@ describe("Multi Sig Tests", function () {
         ).to.be.revertedWith("Not enough confirmations")
     });
     it("A non-signer cannot EXECUTE a confirmed tx", async () => {
-        expect(false).to.equal(true)
+        await MultiSigInstance.connect(wallet1).submitTransaction(wallet6.address, 0, ethers.utils.formatBytes32String("execute Tx"))
+        let txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.numConfirmations).to.equal(0)
+        // wallets 1 and 2 confirm tx - not enough
+        await MultiSigInstance.connect(wallet1).confirmTransaction(0)
+        await MultiSigInstance.connect(wallet2).confirmTransaction(0)
+        await MultiSigInstance.connect(wallet3).confirmTransaction(0)
+        txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.numConfirmations).to.equal(BigNumber.from(3))
+        // wallet 4 executes tx
+        await expect(
+            MultiSigInstance.connect(wallet6).executeTransaction(0)
+        ).to.be.revertedWith("not owner")
     });
-    it("A signer cannot EXECUTE a confirmed, then unconfirmed tx", async () => {
-        expect(false).to.equal(true)
+    it("A signer cannot EXECUTE a confirmed, then REVOKED tx", async () => {
+        await MultiSigInstance.connect(wallet1).submitTransaction(wallet6.address, 0, ethers.utils.formatBytes32String("execute Tx"))
+        let txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.numConfirmations).to.equal(0)
+        // wallets 1 and 2 confirm tx - not enough
+        await MultiSigInstance.connect(wallet1).confirmTransaction(0)
+        await MultiSigInstance.connect(wallet2).confirmTransaction(0)
+        await MultiSigInstance.connect(wallet3).confirmTransaction(0)
+
+        txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.numConfirmations).to.equal(BigNumber.from(3))
+        // wallet 3 revokes confirmation
+        await MultiSigInstance.connect(wallet3).revokeConfirmation(0)
+        // wallet 4 executes tx
+        await expect(
+            MultiSigInstance.connect(wallet4).executeTransaction(0)
+        ).to.be.revertedWith("Not enough confirmations")
     });
     it("An executed tx can send ETH to an address", async () => {
-        expect(false).to.equal(true)
+        let wallet6Bal = await ethers.provider.getBalance(wallet6.address)
+        expect(await ethers.provider.getBalance(MultiSigInstance.address)).to.equal(0)
+        await wallet1.sendTransaction({
+            to: MultiSigInstance.address,
+            value: ethers.utils.parseEther("1.1")
+        })
+        expect(await ethers.provider.getBalance(MultiSigInstance.address)).to.equal(ethers.utils.parseEther("1.1"))
+        await MultiSigInstance.connect(wallet1).submitTransaction(
+            wallet6.address,
+            ethers.utils.parseEther("1.0"),
+            ethers.utils.formatBytes32String("Enjoy the 1 ETH ser")
+        )
+        let txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.numConfirmations).to.equal(0)
+        // wallets 1 - 3 confirm tx
+        await MultiSigInstance.connect(wallet1).confirmTransaction(0)
+        await MultiSigInstance.connect(wallet2).confirmTransaction(0)
+        await MultiSigInstance.connect(wallet3).confirmTransaction(0)
+        txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.numConfirmations).to.equal(BigNumber.from(3))
+        // wallet 4 executes tx
+        await MultiSigInstance.connect(wallet4).executeTransaction(0)
+        txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.to).to.equal(wallet6.address)
+        expect(txRes.value).to.equal(ethers.utils.parseEther("1.0"))
+        expect(txRes.data).to.equal(ethers.utils.formatBytes32String("Enjoy the 1 ETH ser"))
+        expect(txRes.executed).to.equal(true)
+        expect(txRes.numConfirmations).to.equal(3)
+        expect(await ethers.provider.getBalance(MultiSigInstance.address)).to.equal(ethers.utils.parseEther("0.1"))
+        expect(await ethers.provider.getBalance(wallet6.address)).to.equal(ethers.utils.parseEther("1.0").add(wallet6Bal))
     });
     it("An executed tx can call a function on another contract", async () => {
         expect(false).to.equal(true)
