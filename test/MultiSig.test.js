@@ -1,4 +1,5 @@
 // import { ethers } from "hardhat";
+const { BigNumber } = require("@ethersproject/bignumber");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
@@ -82,13 +83,39 @@ describe("Multi Sig Tests", function () {
         ).to.be.revertedWith("not owner")
     });
     it("Signers can CONFIRM a submitted tx", async () => {
-        expect(false).to.equal(true)
+        await MultiSigInstance.connect(wallet1).submitTransaction(wallet6.address, 0, ethers.utils.formatBytes32String("confirm Tx"))
+        let txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.numConfirmations).to.equal(0)
+
+        await MultiSigInstance.connect(wallet2).confirmTransaction(0)
+        txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.numConfirmations).to.equal(BigNumber.from(1))
+
+        await MultiSigInstance.connect(wallet3).confirmTransaction(0)
+        txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.numConfirmations).to.equal(BigNumber.from(2))
     });
     it("A non-signer CANNOT CONFIRM a submitted tx", async () => {
-        expect(false).to.equal(true)
+        await MultiSigInstance.connect(wallet1).submitTransaction(wallet6.address, 0, ethers.utils.formatBytes32String("confirm Tx"))
+        let txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.numConfirmations).to.equal(0)
+
+        await expect(
+            MultiSigInstance.connect(wallet6).confirmTransaction(0)
+        ).to.be.revertedWith("not owner")
     });
     it("Signers can REVOKE a confirmation", async () => {
-        expect(false).to.equal(true)
+        await MultiSigInstance.connect(wallet1).submitTransaction(wallet6.address, 0, ethers.utils.formatBytes32String("confirm Tx"))
+        let txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.numConfirmations).to.equal(0)
+        // wallet 2 confirms
+        await MultiSigInstance.connect(wallet2).confirmTransaction(0)
+        txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.numConfirmations).to.equal(BigNumber.from(1))
+        // wallet 2 revokes conf
+        await MultiSigInstance.connect(wallet2).revokeConfirmation(0)
+        txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.numConfirmations).to.equal(BigNumber.from(0))
     });
     it("A non-signer CANNOT REVOKE a confirmation", async () => {
         expect(false).to.equal(true)
