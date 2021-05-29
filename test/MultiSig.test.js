@@ -1,4 +1,6 @@
+// import { ethers } from "hardhat";
 const { expect } = require("chai");
+const { ethers } = require("hardhat");
 
 // Wallets 1-5 are multisig signers
 // Wallet 6 is random pleb - not part of multisig
@@ -6,6 +8,7 @@ let wallet1, wallet2, wallet3, wallet4, wallet5, wallet6
 let signerAddresses
 let MultiSigContract
 let MultiSigInstance
+
 
 describe("Multi Sig Tests", function () {
     beforeEach(async () => {
@@ -56,13 +59,27 @@ describe("Multi Sig Tests", function () {
         expect(txRes.numConfirmations).to.equal(0)
     });
     it("MultiSig can accept ETH", async () => {
-        expect(false).to.equal(true)
+        expect(await ethers.provider.getBalance(MultiSigInstance.address)).to.equal(0)
+        await wallet1.sendTransaction({
+            to: MultiSigInstance.address,
+            value: ethers.utils.parseEther("1.0")
+        })
+        expect(await ethers.provider.getBalance(MultiSigInstance.address)).to.equal(ethers.utils.parseEther("1.0"))
     });
     it("A signer can SUBMIT a tx", async () => {
-        expect(false).to.equal(true)
+        await MultiSigInstance.connect(wallet1).submitTransaction(wallet6.address, 2, ethers.utils.formatBytes32String("submit Tx"))
+        let txRes = await MultiSigInstance.getTransaction(0)
+
+        expect(txRes.to).to.equal(wallet6.address)
+        expect(txRes.value).to.equal(2)
+        expect(txRes.data).to.equal(ethers.utils.formatBytes32String("submit Tx"))
+        expect(txRes.executed).to.equal(false)
+        expect(txRes.numConfirmations).to.equal(0)
     });
     it("A non-signer CANNOT SUBMIT a tx", async () => {
-        expect(false).to.equal(true)
+        await expect(
+            MultiSigInstance.connect(wallet6).submitTransaction(wallet6.address, 2, ethers.utils.formatBytes32String("submit Tx"))
+        ).to.be.revertedWith("not owner")
     });
     it("Signers can CONFIRM a submitted tx", async () => {
         expect(false).to.equal(true)
