@@ -12,7 +12,8 @@ Multi Sig Tests
 - getTransaction() returns a transaction correctly
 - MultiSig can accept ETH
 - A signer can SUBMIT a tx
-- A non-signer cannot SUBMIT a tx (43ms)Signers can CONFIRM a submitted tx (51ms)
+- A non-signer cannot SUBMIT a tx (43ms)
+- Signers can CONFIRM a submitted tx (51ms)
 - A non-signer cannot CONFIRM a submitted tx (56ms)
 - Signers can REVOKE a confirmation (105ms)
 - A non-signer cannot REVOKE a confirmation
