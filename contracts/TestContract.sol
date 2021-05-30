@@ -9,8 +9,8 @@ contract TestContract {
         i += j;
     }
 
-    function getData() public pure returns (bytes memory){
+    function getData(uint256 j) public pure returns (bytes memory){
         // return callMe(123);
-        return abi.encodeWithSignature("callMe(uint256)", 123);
+        return abi.encodeWithSignature("callMe(uint256)", j);
     }
 }

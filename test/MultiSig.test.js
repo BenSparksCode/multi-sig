@@ -9,6 +9,8 @@ let wallet1, wallet2, wallet3, wallet4, wallet5, wallet6
 let signerAddresses
 let MultiSigContract
 let MultiSigInstance
+let TestContract
+let TestInstance
 
 
 describe("Multi Sig Tests", function () {
@@ -17,6 +19,8 @@ describe("Multi Sig Tests", function () {
         signerAddresses = [wallet1.address, wallet2.address, wallet3.address, wallet4.address, wallet5.address]
         MultiSigContract = await ethers.getContractFactory("MultiSigWallet");
         MultiSigInstance = await MultiSigContract.deploy(signerAddresses, 3);
+        TestContract = await ethers.getContractFactory("TestContract");
+        TestInstance = await TestContract.deploy();
     })
     it("MultiSig deploys correctly with expected config", async () => {
         let wallets = await MultiSigInstance.getOwners()
@@ -225,6 +229,33 @@ describe("Multi Sig Tests", function () {
         expect(await ethers.provider.getBalance(wallet6.address)).to.equal(ethers.utils.parseEther("1.0").add(wallet6Bal))
     });
     it("An executed tx can call a function on another contract", async () => {
-        expect(false).to.equal(true)
+        // Check test contract int adding works
+        expect(await TestInstance.i()).to.equal(0)
+        await TestInstance.callMe(5)
+        expect(await TestInstance.i()).to.equal(BigNumber.from(5))
+        // Start the process of calling the Test contract from multisig
+        // Goal: call callme() to add 6 to i(5) so i = 11
+        await MultiSigInstance.connect(wallet1).submitTransaction(
+            TestInstance.address,
+            0,
+            TestInstance.interface.encodeFunctionData("callMe",[6])
+        )
+        let txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.numConfirmations).to.equal(0)
+        // wallets 1 - 3 confirm tx
+        await MultiSigInstance.connect(wallet1).confirmTransaction(0)
+        await MultiSigInstance.connect(wallet2).confirmTransaction(0)
+        await MultiSigInstance.connect(wallet3).confirmTransaction(0)
+        txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.numConfirmations).to.equal(BigNumber.from(3))
+        // wallet 4 executes tx
+        await MultiSigInstance.connect(wallet4).executeTransaction(0)
+        txRes = await MultiSigInstance.getTransaction(0)
+        expect(txRes.to).to.equal(TestInstance.address)
+        expect(txRes.value).to.equal(0)
+        expect(txRes.data).to.equal(await TestInstance.getData(6))
+        expect(txRes.executed).to.equal(true)
+        expect(txRes.numConfirmations).to.equal(3)
+        expect(await TestInstance.i()).to.equal(BigNumber.from(11))
     });
 });
