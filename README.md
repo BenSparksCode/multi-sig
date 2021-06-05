@@ -28,7 +28,7 @@ A simple multi-sig smart contract wallet
   17 passing (4s)
 ```
 
-### Multi Sig Tests
+### MultiSigWallet Tests
 
 ✅ MultiSig deploys correctly with expected config (50ms)
 
